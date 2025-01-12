@@ -507,7 +507,7 @@ where
 
         // The diagnostics for this query will be promoted to the current session during
         // `try_mark_green()`, so we can ignore them here.
-        if let Some(ret) = qcx.start_query(job_id, false, None, || {
+        if let Some(ret) = qcx.start_query(job_id, query.depth_limit(), None, || {
             try_load_from_disk_and_cache_in_memory(query, dep_graph_data, qcx, &key, dep_node)
         }) {
             return ret;

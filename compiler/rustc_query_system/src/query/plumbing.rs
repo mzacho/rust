@@ -324,12 +324,18 @@ where
     let state = query.query_state(qcx);
     let mut state_lock = state.active.lock_shard_by_value(&key);
 
-    // For the parallel compiler we need to check both the query cache and query state structures
-    // while holding the state lock to ensure that 1) the query has not yet completed and 2) the
-    // query is not still executing. Without checking the query cache here, we can end up
-    // re-executing the query since `try_start` only checks that the query is not currently
-    // executing, but another thread may have already completed the query and stores it result
-    // in the query cache.
+    // To avoid executing the query on multiple threads concurrently, while holding the query state
+    // lock we check that
+    //
+    //   1. The query cache has no entry for the key, and
+    //   2. The query state has not been updated with a result for the query yet
+    //
+    // The first condition ensures that no thread is finished executing the query, while the second
+    // condition ensures that no thread has started executing the query (meaning it's fine for us to
+    // start executing it).
+    //
+    // If we find a cache miss but the lock is in use by a different thread, then we wait for it to
+    // finish computing.
     if qcx.dep_context().sess().threads() > 1 {
         if let Some((value, index)) = query.query_cache(qcx).lookup(&key) {
             qcx.dep_context().profiler().query_cache_hit(index.into());

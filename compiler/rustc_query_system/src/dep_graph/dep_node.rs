@@ -157,8 +157,7 @@ impl fmt::Debug for DepNode {
 pub trait DepNodeParams<Tcx: DepContext>: fmt::Debug + Sized {
     fn fingerprint_style() -> FingerprintStyle;
 
-    /// This method turns the parameters of a DepNodeConstructor into an opaque
-    /// Fingerprint to be used in DepNode.
+    /// This method turns the parameters into an opaque Fingerprint to be used in DepNode.
     /// Not all DepNodeParams support being turned into a Fingerprint (they
     /// don't need to if the corresponding DepNode is anonymous).
     fn to_fingerprint(&self, _: Tcx) -> Fingerprint {
